@@ -9,8 +9,7 @@ from .version import __version__
 
 
 class SlackRequest(object):
-    def __init__(self):
-
+    def __init__(self, proxies=None):
         # __name__ returns 'slackclient._slackrequest', we only want 'slackclient'
         client_name = __name__.split('.')[0]
         client_version = __version__  # Version is returned from version.py
@@ -21,7 +20,7 @@ class SlackRequest(object):
             "python": "Python/{v.major}.{v.minor}.{v.micro}".format(v=sys.version_info),
             "system": "{0}/{1}".format(platform.system(), platform.release())
         }
-
+        self.proxies = proxies
         self.custom_user_agent = None
 
     def get_user_agent(self):
@@ -76,4 +75,4 @@ class SlackRequest(object):
         post_data['token'] = token
         headers = {'user-agent': self.get_user_agent()}
 
-        return requests.post(url, headers=headers, data=post_data, files=files, timeout=timeout)
+        return requests.post(url, headers=headers, data=post_data, files=files, timeout=timeout, proxies=self.proxies)

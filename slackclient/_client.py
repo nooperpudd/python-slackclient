@@ -22,10 +22,11 @@ class SlackClient(object):
             `here <https://api.slack.com/docs/oauth-test-tokens>`_
             Note: Be `careful with your token <https://api.slack.com/docs/oauth-safety>`_
     '''
-    def __init__(self, token):
+
+    def __init__(self, token, proxies=None):
 
         self.token = token
-        self.server = Server(self.token, False)
+        self.server = Server(self.token, False, proxies)
 
     def append_user_agent(self, name, version):
         self.server.append_user_agent(name, version)

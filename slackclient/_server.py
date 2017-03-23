@@ -1,11 +1,13 @@
-from slackclient._slackrequest import SlackRequest
-from slackclient._channel import Channel
-from slackclient._user import User
-from slackclient._util import SearchList, SearchDict
+import json
 from ssl import SSLError
 
+from requests.packages.urllib3.util.url import parse_url
 from websocket import create_connection
-import json
+
+from slackclient._channel import Channel
+from slackclient._slackrequest import SlackRequest
+from slackclient._user import User
+from slackclient._util import SearchList, SearchDict
 
 
 class Server(object):
@@ -14,7 +16,8 @@ class Server(object):
 
 
     '''
-    def __init__(self, token, connect=True):
+
+    def __init__(self, token, connect=True, proxies=None):
         self.token = token
         self.username = None
         self.domain = None
@@ -24,7 +27,8 @@ class Server(object):
         self.channels = SearchList()
         self.connected = False
         self.ws_url = None
-        self.api_requester = SlackRequest()
+        self.proxies = proxies
+        self.api_requester = SlackRequest(proxies)
 
         if connect:
             self.rtm_connect()
@@ -88,8 +92,23 @@ class Server(object):
         self.parse_user_data(login_data["users"])
 
     def connect_slack_websocket(self, ws_url):
+
+        if self.proxies:
+            proxy = self.proxies.get("http") or self.proxies.get("https")
+            scheme_proxy = parse_url(proxy)
+            proxy_host = scheme_proxy.host
+            proxy_port = scheme_proxy.port
+            proxy_auth = scheme_proxy.auth
+            if proxy_auth:
+                proxy_auth = tuple(proxy_auth.split(":"))
+        else:
+            proxy_host, proxy_port, proxy_auth = None, None, None
+
         try:
-            self.websocket = create_connection(ws_url)
+            self.websocket = create_connection(ws_url,
+                                               http_proxy_port=proxy_port,
+                                               http_proxy_auth=proxy_auth,
+                                               http_proxy_host=proxy_host)
             self.websocket.sock.setblocking(0)
         except:
             raise SlackConnectionError
